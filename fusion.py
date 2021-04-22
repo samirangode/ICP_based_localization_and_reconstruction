@@ -61,7 +61,9 @@ class Map:
         \param w Width of the image projected to
         \return mask (N, 1) in bool indicating the valid coordinates
         '''
-        return np.zeros_like(us)
+        mask = np.zeros_like(us).astype(bool)
+        mask =  np.logical_and((us<h),(vs<w),(ds>0))
+        return mask
 
     def filter_pass2(self, points, normals, input_points, input_normals,
                      dist_diff, angle_diff):
@@ -76,6 +78,7 @@ class Map:
         \param angle_diff Angle difference threshold to filter correspondences by normals
         \return mask (N, 1) in bool indicating the valid correspondences
         '''
+        
         return np.zeros((len(points)))
 
     def fuse(self,

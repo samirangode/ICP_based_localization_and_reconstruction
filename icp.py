@@ -155,6 +155,7 @@ def solve(A, b):
     \return delta (6, ) vector by solving the linear system. You may directly use dense solvers from numpy.
     '''
     # TODO: write your relevant solver
+    
     return np.zeros((6, ))
 
 
