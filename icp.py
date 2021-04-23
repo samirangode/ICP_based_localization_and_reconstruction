@@ -49,7 +49,8 @@ def find_projective_correspondence(source_points,
 
     # TODO: first filter: valid projection
     mask = np.zeros_like(target_us).astype(bool)
-    mask =  np.logical_and((target_us<h),(target_vs<w),(target_ds>0))
+    #mask =  np.logical_and((target_us<w),(target_vs<w),(target_ds>0))
+    mask = (target_us<w)*(target_us>0)*(target_vs<h)*(target_vs>0)*(target_ds>0)
     # End of TODO
 
     source_indices = source_indices[mask]
@@ -60,9 +61,9 @@ def find_projective_correspondence(source_points,
     # TODO: second filter: apply distance threshold
     mask = np.zeros_like(target_us).astype(bool)
     
-    final_points = [target_us, target_vs]
+    final_points = target_vertex_map[target_vs, target_us]
     
-    dist_points = np.linalg.norm(final_points-T_source_points)
+    dist_points = np.linalg.norm(T_source_points-final_points,axis =1)
     
     mask = dist_points<dist_diff
     # End of TODO
@@ -73,6 +74,8 @@ def find_projective_correspondence(source_points,
 
     return source_indices, target_us, target_vs
 
+
+#### start debug
 
 def build_linear_system(source_points, target_points, target_normals, T):
     M = len(source_points)
@@ -90,27 +93,33 @@ def build_linear_system(source_points, target_points, target_normals, T):
 
     # TODO: build the linear system
     for i in range(M):
-        A_col_1 = n_q[i].T @ np.cross(np.array([1,0,0]),p_prime[i])
+        A_col_1 = n_q[i,:].T @ np.cross(np.array([1,0,0]),p_prime[i,:]).T
         
-        A_col_2 = n_q[i].T @ np.cross(np.array([0,1,0]),p_prime[i])
+        A_col_2 = n_q[i,:].T @ np.cross(np.array([0,1,0]),p_prime[i,:]).T
 
-        A_col_3 = n_q[i].T @ np.cross(np.array([0,0,1]),p_prime[i])
+        A_col_3 = n_q[i,:].T @ np.cross(np.array([0,0,1]),p_prime[i,:]).T
 
-        A_col_4 = n_q[i].T @ np.array([1,0,0]).T
+        A_col_4 = n_q[i,:].T @ np.array([1,0,0]).T
 
-        A_col_5 = n_q[i].T @ np.array([0,1,0]).T
+        A_col_5 = n_q[i,:].T @ np.array([0,1,0]).T
 
-        A_col_6 = n_q[i].T @ np.array([0,0,1]).T
+        A_col_6 = n_q[i,:].T @ np.array([0,0,1]).T
 
         A_temp = np.array([A_col_1, A_col_2, A_col_3, A_col_4, A_col_5, A_col_6])
-        A_temp.reshape((6,))
-        A[i] = A_temp
+        ## debug
+        #print(A_temp.shape)
+        ## end debug
+        #A_temp = A_temp.reshape((6,))
+        A[i,:] = A_temp
 
-        b[i] = n_q[i].T @ (p_prime[i] - q[i]) 
+        b[i] = n_q[i] @ (p_prime[i,:] - q[i,:]).T 
+
 
     # End of TODO
-
+    #print("printing A {}",A)
+    b = -b
     return A, b
+
 
 
 def pose2transformation(delta):
@@ -155,8 +164,10 @@ def solve(A, b):
     \return delta (6, ) vector by solving the linear system. You may directly use dense solvers from numpy.
     '''
     # TODO: write your relevant solver
+    #np.linalg.solve
+    x = np.linalg.solve(A.T @ A, A.T @ b)
     
-    return np.zeros((6, ))
+    return x
 
 
 def icp(source_points,

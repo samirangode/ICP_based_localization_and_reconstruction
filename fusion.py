@@ -35,7 +35,26 @@ class Map:
         \param t translation from camera (input) to world (map), (3, )
         \return None, update map properties IN PLACE
         '''
-        pass
+        new_points = R @ points.T + t
+        new_normals = R @ normals.T
+        #new_points = np.dot(R,points) + t
+
+        #new_normals = np.dot(R,normals)
+        # print(self.points.shape)
+        # print(new_points.shape)
+        # print(len([indices==True]))
+        
+        new_colors = colors
+        
+        self.points[indices] = (self.weights[indices]*self.points[indices] + new_points.T)/(self.weights[indices] + 1)
+        
+        self.normals[indices] = (self.weights[indices]*self.normals[indices] + new_normals.T)/(self.weights[indices] + 1)
+        
+        self.colors[indices] = (self.weights[indices]*self.colors[indices] + new_colors)/(self.weights[indices] + 1)
+        
+        self.weights[indices] = self.weights[indices] + 1
+        
+        #pass
 
     def add(self, points, normals, colors, R, t):
         '''
@@ -48,7 +67,29 @@ class Map:
         \param t translation from camera (input) to world (map), (3, )
         \return None, update map properties by concatenation
         '''
-        pass
+        
+        new_points = R @ points.T + t
+        #new_points = np.dot(R,points) + t
+        new_normals = R @ normals.T
+        #new_normals = np.dot(R,normals)
+        new_colors = colors
+        
+        new_weights = np.ones((len(points),1))
+        
+        ## debug
+        #print(new_points.shape)
+        #print(self.points.shape)
+        #print(new_weights.shape)
+        #print(self.weights.shape)
+
+        self.points = np.concatenate((self.points, new_points.T), axis = 0)
+
+        self.normals = np.concatenate((self.normals,new_normals.T), axis = 0)
+
+        self.colors = np.concatenate((self.colors, new_colors), axis = 0)
+        
+        self.weights = np.concatenate((self.weights, new_weights), axis = 0)
+        #pass
 
     def filter_pass1(self, us, vs, ds, h, w):
         '''
@@ -62,7 +103,8 @@ class Map:
         \return mask (N, 1) in bool indicating the valid coordinates
         '''
         mask = np.zeros_like(us).astype(bool)
-        mask =  np.logical_and((us<h),(vs<w),(ds>0))
+        #mask =  np.logical_and((us<w),(vs<h),(ds>0))
+        mask = (us<w)*(us>0)*(vs<h)*(vs>0)*(ds>0)
         return mask
 
     def filter_pass2(self, points, normals, input_points, input_normals,
@@ -78,8 +120,24 @@ class Map:
         \param angle_diff Angle difference threshold to filter correspondences by normals
         \return mask (N, 1) in bool indicating the valid correspondences
         '''
+    
+        dist_points = np.linalg.norm(points-input_points, axis  = 1)
         
-        return np.zeros((len(points)))
+        dist_condition = (dist_points<dist_diff)
+
+        dot_product = np.sum(normals*input_normals, axis = 1)
+
+        norms = np.linalg.norm(input_normals, axis =1)*np.linalg.norm(normals, axis =1)
+
+        cos_theta = np.divide(dot_product, norms)
+
+        angles = np.arccos(cos_theta)
+
+        angles_condition = (angles < angle_diff)
+        #theta = np.arccos((normals * input_normals).sum(axis=1))
+        mask = np.logical_and(dist_condition, angles_condition)
+        #return np.zeros((len(points)))
+        return mask
 
     def fuse(self,
              vertex_map,
