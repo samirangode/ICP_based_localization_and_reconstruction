@@ -93,24 +93,42 @@ def build_linear_system(source_points, target_points, target_normals, T):
 
     # TODO: build the linear system
     for i in range(M):
-        A_col_1 = n_q[i,:].T @ np.cross(np.array([1,0,0]),p_prime[i,:]).T
         
-        A_col_2 = n_q[i,:].T @ np.cross(np.array([0,1,0]),p_prime[i,:]).T
+        ### Uncomment this for older version
+        # A_col_1 = n_q[i,:].T @ np.cross(np.array([1,0,0]),p_prime[i,:]).T
+        
+        # A_col_2 = n_q[i,:].T @ np.cross(np.array([0,1,0]),p_prime[i,:]).T
 
-        A_col_3 = n_q[i,:].T @ np.cross(np.array([0,0,1]),p_prime[i,:]).T
+        # A_col_3 = n_q[i,:].T @ np.cross(np.array([0,0,1]),p_prime[i,:]).T
 
-        A_col_4 = n_q[i,:].T @ np.array([1,0,0]).T
+        # A_col_4 = n_q[i,:].T @ np.array([1,0,0]).T
 
-        A_col_5 = n_q[i,:].T @ np.array([0,1,0]).T
+        # A_col_5 = n_q[i,:].T @ np.array([0,1,0]).T
 
-        A_col_6 = n_q[i,:].T @ np.array([0,0,1]).T
+        # A_col_6 = n_q[i,:].T @ np.array([0,0,1]).T
 
-        A_temp = np.array([A_col_1, A_col_2, A_col_3, A_col_4, A_col_5, A_col_6])
+        # A_temp = np.array([A_col_1, A_col_2, A_col_3, A_col_4, A_col_5, A_col_6])
+        
         ## debug
         #print(A_temp.shape)
         ## end debug
         #A_temp = A_temp.reshape((6,))
-        A[i,:] = A_temp
+        
+        #### Assign A_temp A[i,:] for older version
+        #A[i,:] = A_temp
+
+        ### Trying a faster method
+        p_x = p_prime[i,0]
+        p_y = p_prime[i,1]
+        p_z = p_prime[i,2]
+        A_matrix = np.zeros((3,6))
+        A_matrix = np.array([[0, p_z,  -p_y, 1, 0, 0],[-p_z, 0, p_x, 0, 1, 0],[p_y, -p_x, 0, 0, 0, 1]])
+        A_improved = n_q[i,:] @ A_matrix
+
+        A[i,:] = A_improved
+
+
+
 
         b[i] = n_q[i] @ (p_prime[i,:] - q[i,:]).T 
 

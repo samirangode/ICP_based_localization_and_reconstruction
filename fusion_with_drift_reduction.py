@@ -22,6 +22,7 @@ class Map:
         self.colors = np.empty((0, 3))
         self.weights = np.empty((0, 1))
         self.initialized = False
+        self.time_point_active = np.empty((0,1))
 
     def merge(self, indices, points, normals, colors, R, t):
         '''
@@ -53,11 +54,10 @@ class Map:
         self.colors[indices] = (self.weights[indices]*self.colors[indices] + new_colors)/(self.weights[indices] + 1)
         
         self.weights[indices] = self.weights[indices] + 1
+        
+        ### Updating time
+        self.time_point_active[indices] = self.time_point_active[indices] + 1
 
-        mod = np.linalg.norm(self.normals[indices],axis=1)
-        #self.normals[indices] = np.divide(self.normals[indices], mod)
-        mod = mod.reshape((mod.shape[0],1))
-        self.normals[indices] = self.normals[indices]/ mod
         #pass
 
     def add(self, points, normals, colors, R, t):
@@ -80,6 +80,7 @@ class Map:
         
         new_weights = np.ones((len(points),1))
         
+        new_time = np.ones((len(points),1))
         ## debug
         #print(new_points.shape)
         #print(self.points.shape)
@@ -93,6 +94,10 @@ class Map:
         self.colors = np.concatenate((self.colors, new_colors), axis = 0)
         
         self.weights = np.concatenate((self.weights, new_weights), axis = 0)
+        
+        #### Adding time for the new points
+        self.time_point_active = np.concatenate((self.time_point_active, new_time), axis = 0)
+        
         #pass
 
     def filter_pass1(self, us, vs, ds, h, w):
